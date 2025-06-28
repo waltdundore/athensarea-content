@@ -1,0 +1,71 @@
+<!-- AthensArea.net - Newspaper Layout Frontend -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AthensArea.net</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="bg-white text-black font-serif">
+  <header class="bg-red-700 text-white p-4 text-center">
+    <h1 class="text-3xl font-bold">AthensArea.net</h1>
+    <p class="text-sm">Your source for hyper-local news & events</p>
+  </header>
+
+  <nav class="bg-gray-100 p-2 text-sm text-center">
+    <a href="#news" class="mx-2">News</a>
+    <a href="#weather" class="mx-2">Weather</a>
+    <a href="#classifieds" class="mx-2">Classifieds</a>
+    <a href="#ads" class="mx-2">Ads</a>
+    <a href="#login" class="mx-2">Login</a>
+    <a href="#forum" class="mx-2">Forum</a>
+  </nav>
+
+  <main class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+    <section id="news" class="col-span-2">
+      <h2 class="text-xl font-bold border-b pb-2 mb-4">Latest News</h2>
+      <div id="articles"></div>
+    </section>
+
+    <aside id="weather" class="bg-gray-50 p-4">
+      <h2 class="text-lg font-semibold">Weather</h2>
+      <p id="weather-data">Sunny, 85°F</p>
+    </aside>
+
+    <section id="classifieds" class="col-span-1">
+      <h2 class="text-xl font-bold border-b pb-2 mb-4">Classifieds</h2>
+      <div id="classifieds-list">No items yet.</div>
+    </section>
+
+    <section id="ads" class="col-span-1">
+      <h2 class="text-xl font-bold border-b pb-2 mb-4">Sponsored</h2>
+      <div id="ads-container">Coming soon.</div>
+    </section>
+
+    <section id="login" class="col-span-3 mt-8 text-center">
+      <button class="bg-red-700 text-white px-4 py-2 rounded">Login</button>
+    </section>
+  </main>
+
+  <footer class="text-center text-sm text-gray-500 p-4">
+    &copy; 2025 AthensArea.net — A local project by and for the Classic City
+  </footer>
+
+  <script>
+    fetch("http://localhost:8055/items/articles")
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("articles");
+        data.data.forEach(article => {
+          const div = document.createElement("div");
+          div.className = "mb-6";
+          div.innerHTML = `<h3 class="text-lg font-bold">${article.title}</h3><p>${article.content}</p>`;
+          container.appendChild(div);
+        });
+      })
+      .catch(err => console.error("Error fetching articles:", err));
+  </script>
+</body>
+</html>
+
