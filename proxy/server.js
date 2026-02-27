@@ -1,23 +1,34 @@
 /**
- * server.js — Whitelist-only RSS proxy
+ * server.js — RSS proxy + Classifieds API
  *
- * Security requirements:
- *   - Only URLs in WHITELIST may pass through (403 otherwise)
- *   - Outbound request headers stripped (no cookie/auth leakage)
- *   - Rate-limited per IP
- *   - Timeout on upstream fetch
+ * Endpoints:
+ *   GET  /api/rss?url=...        Whitelist-only RSS proxy
+ *   GET  /api/listings           Fetch classifieds (optional ?category=)
+ *   POST /api/listings           Create classified listing
+ *   GET  /health                 Health check
+ *
+ * Cloudflare Turnstile: verified when TURNSTILE_SECRET env var is set.
+ * Leave TURNSTILE_SECRET empty to disable verification (pre-go-live).
  */
 
 'use strict';
 
-const express    = require('express');
-const rateLimit  = require('express-rate-limit');
+const express   = require('express');
+const Database  = require('better-sqlite3');
+const crypto    = require('crypto');
+const path      = require('path');
 
-const PORT             = process.env.PORT || 3001;
-const RATE_LIMIT_MAX   = parseInt(process.env.RATE_LIMIT_MAX || '60', 10);
-const UPSTREAM_TIMEOUT = 8000; // ms
+const PORT             = process.env.PORT           || 3001;
+const DB_PATH          = process.env.DB_PATH        || '/data/listings.db';
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '';
+const UPSTREAM_TIMEOUT = 8000;
 
-/** Exact whitelist of permitted upstream URLs */
+const VALID_CATEGORIES = new Set(['Housing', 'Jobs', 'For Sale', 'Services', 'Community']);
+const TITLE_MAX        = 80;
+const DESC_MAX         = 500;
+const CONTACT_MAX      = 100;
+
+/** Exact whitelist of permitted RSS upstream URLs */
 const WHITELIST = new Set([
   'https://flagpole.com/feed/',
   'https://athenspoliticsnerd.com/feed/',
@@ -26,49 +37,136 @@ const WHITELIST = new Set([
   'https://www.ajc.com/local/athens/rss.xml',
 ]);
 
+/* ============================================================
+   DATABASE SETUP
+   ============================================================ */
+
+const db = new Database(DB_PATH);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS listings (
+    id          TEXT PRIMARY KEY,
+    category    TEXT NOT NULL,
+    title       TEXT NOT NULL,
+    description TEXT NOT NULL,
+    contact     TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category);
+  CREATE INDEX IF NOT EXISTS idx_listings_created  ON listings(created_at DESC);
+`);
+
+const stmtInsert = db.prepare(`
+  INSERT INTO listings (id, category, title, description, contact, created_at)
+  VALUES (@id, @category, @title, @description, @contact, @created_at)
+`);
+
+const stmtAll = db.prepare(
+  'SELECT * FROM listings ORDER BY created_at DESC'
+);
+
+const stmtByCategory = db.prepare(
+  'SELECT * FROM listings WHERE category = ? ORDER BY created_at DESC'
+);
+
+/* ============================================================
+   EXPRESS APP
+   ============================================================ */
+
 const app = express();
 app.disable('x-powered-by');
+app.use(express.json({ limit: '16kb' }));
 
-// Rate limit: configurable, default 60 req/min per IP
-const limiter = rateLimit({
-  windowMs:         60 * 1000,
-  max:              RATE_LIMIT_MAX,
-  standardHeaders:  true,
-  legacyHeaders:    false,
-  message:          { error: 'Too many requests' },
+/* ============================================================
+   GET /api/listings
+   ============================================================ */
+
+app.get('/api/listings', (req, res) => {
+  const category = req.query.category;
+
+  if (category !== undefined) {
+    if (!VALID_CATEGORIES.has(category)) {
+      res.status(400).json({ error: 'Invalid category' });
+      return;
+    }
+    const rows = stmtByCategory.all(category);
+    res.json(rows);
+    return;
+  }
+
+  res.json(stmtAll.all());
 });
 
-app.use('/api/rss', limiter);
+/* ============================================================
+   POST /api/listings
+   ============================================================ */
+
+app.post('/api/listings', async (req, res) => {
+  const { category, title, description, contact, turnstileToken } = req.body || {};
+
+  // Validate required fields
+  if (typeof category !== 'string' || !VALID_CATEGORIES.has(category)) {
+    res.status(400).json({ error: 'Invalid category' });
+    return;
+  }
+  if (typeof title !== 'string' || title.trim().length === 0) {
+    res.status(400).json({ error: 'Title is required' });
+    return;
+  }
+  if (typeof description !== 'string' || description.trim().length === 0) {
+    res.status(400).json({ error: 'Description is required' });
+    return;
+  }
+
+  // Cloudflare Turnstile verification — active only when TURNSTILE_SECRET is set
+  if (TURNSTILE_SECRET) {
+    const verified = await verifyTurnstile(turnstileToken);
+    if (!verified) {
+      res.status(403).json({ error: 'CAPTCHA verification failed' });
+      return;
+    }
+  }
+
+  const listing = {
+    id:          crypto.randomUUID(),
+    category:    category.trim(),
+    title:       title.trim().slice(0, TITLE_MAX),
+    description: description.trim().slice(0, DESC_MAX),
+    contact:     typeof contact === 'string' ? contact.trim().slice(0, CONTACT_MAX) : '',
+    created_at:  new Date().toISOString(),
+  };
+
+  stmtInsert.run(listing);
+  res.status(201).json(listing);
+});
+
+/* ============================================================
+   GET /api/rss — Whitelist-only RSS proxy
+   ============================================================ */
 
 app.get('/api/rss', async (req, res) => {
   const targetUrl = req.query.url;
 
-  // Validate URL parameter exists and is a string
   if (typeof targetUrl !== 'string' || targetUrl.length === 0) {
     res.status(400).json({ error: 'Missing url parameter' });
     return;
   }
 
-  // Enforce whitelist — reject anything not explicitly permitted
   if (!WHITELIST.has(targetUrl)) {
     res.status(403).json({ error: 'URL not permitted' });
     return;
   }
-
-  // Only forward safe headers upstream — no cookies, no auth, no referrer
-  const upstreamHeaders = {
-    'Accept':          'application/rss+xml, application/xml, text/xml',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'User-Agent':      'AthensArea.net RSS Proxy/1.0',
-  };
 
   const controller = new AbortController();
   const timeout    = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT);
 
   try {
     const upstreamRes = await fetch(targetUrl, {
-      headers: upstreamHeaders,
-      signal:  controller.signal,
+      headers: {
+        'Accept':     'application/rss+xml, application/xml, text/xml',
+        'User-Agent': 'AthensArea.net RSS Proxy/1.0',
+      },
+      signal:   controller.signal,
       redirect: 'follow',
     });
 
@@ -80,16 +178,14 @@ app.get('/api/rss', async (req, res) => {
     }
 
     const contentType = upstreamRes.headers.get('content-type') || 'application/xml';
-    const body        = await upstreamRes.text();
-
-    // Only serve XML/RSS content types
     if (!contentType.includes('xml') && !contentType.includes('rss') && !contentType.includes('atom')) {
       res.status(502).json({ error: 'Upstream returned unexpected content type' });
       return;
     }
 
+    const body = await upstreamRes.text();
     res.set('Content-Type', 'application/xml; charset=utf-8');
-    res.set('Cache-Control', 'public, max-age=300'); // 5-minute cache
+    res.set('Cache-Control', 'public, max-age=300');
     res.set('X-Content-Type-Options', 'nosniff');
     res.send(body);
 
@@ -103,11 +199,47 @@ app.get('/api/rss', async (req, res) => {
   }
 });
 
-// Health check
+/* ============================================================
+   GET /health
+   ============================================================ */
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+/* ============================================================
+   TURNSTILE VERIFICATION (inactive when TURNSTILE_SECRET unset)
+   ============================================================ */
+
+/**
+ * Verify a Cloudflare Turnstile token against the siteverify API.
+ * Only called when TURNSTILE_SECRET env var is set.
+ * @param {string|null|undefined} token
+ * @returns {Promise<boolean>}
+ */
+async function verifyTurnstile(token) {
+  if (typeof token !== 'string' || token.length === 0) { return false; }
+
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ secret: TURNSTILE_SECRET, response: token }),
+    });
+    if (!res.ok) { return false; }
+    const json = await res.json();
+    return json.success === true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+
 app.listen(PORT, () => {
-  console.log(`RSS proxy listening on port ${PORT}`);
+  console.log(`AthensArea proxy listening on port ${PORT}`);
+  console.log(`  DB: ${DB_PATH}`);
+  console.log(`  Turnstile: ${TURNSTILE_SECRET ? 'ACTIVE' : 'inactive (pre-go-live)'}`);
 });

@@ -6,7 +6,7 @@
  */
 
 import { SOURCES, PROXY_BASE } from './app.js';
-import { onFilterChangeCallback, isSourceVisible } from './filter.js';
+import { onFilterChangeCallback, getDateFilter } from './filter.js';
 
 /** @type {Array<{sourceId: string, title: string, link: string, excerpt: string, date: string, badge: string}>} */
 let allArticles = [];
@@ -160,16 +160,32 @@ function parseReddit(source, json) {
    ============================================================ */
 
 /**
- * Render articles matching current filter state.
- * @param {Set<string>} activeIds — empty means show all
+ * Returns true if the article passes both source and date filters.
+ * @param {object} article
+ * @param {Set<string>} activeIds
+ * @returns {boolean}
+ */
+function isArticleVisible(article, activeIds) {
+  if (activeIds.size > 0 && !activeIds.has(article.sourceId)) { return false; }
+
+  const cutoff = getDateFilter();
+  if (cutoff !== null) {
+    const articleMs = new Date(article.date).getTime();
+    if (articleMs < cutoff) { return false; }
+  }
+
+  return true;
+}
+
+/**
+ * Render articles matching current filter state, sorted newest first.
+ * @param {Set<string>} activeIds — empty means all sources shown
  */
 function renderFiltered(activeIds) {
   const container = document.getElementById('articles');
   if (!container) { return; }
 
-  const visible = allArticles.filter(a =>
-    activeIds.size === 0 || activeIds.has(a.sourceId)
-  );
+  const visible = allArticles.filter(a => isArticleVisible(a, activeIds));
 
   if (visible.length === 0 && allArticles.length === 0) {
     // Still loading — keep skeletons
@@ -178,7 +194,7 @@ function renderFiltered(activeIds) {
 
   if (visible.length === 0) {
     container.innerHTML =
-      '<div class="empty-state"><p class="empty-state__message">No articles from the selected source.</p></div>';
+      '<div class="empty-state"><p class="empty-state__message">No articles match the selected filters.</p></div>';
     return;
   }
 

@@ -4,7 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; connect-src 'self' https://api.weather.gov https://www.reddit.com; img-src 'self' data: https:; style-src 'self';" />
+        content="default-src 'self'; connect-src 'self' https://api.weather.gov https://www.reddit.com https://challenges.cloudflare.com; img-src 'self' data: https:; style-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com;" />
+  <!--
+    TURNSTILE GO-LIVE: uncomment the script tag below and the widget div inside the modal form.
+    Then set TURNSTILE_SECRET in docker-compose.yml environment.
+  -->
+  <!-- <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script> -->
   <title>AthensArea.net — Athens, GA Local News</title>
   <meta name="description" content="Hyper-local news, events, and classifieds for Athens, Georgia." />
   <link rel="stylesheet" href="/css/main.css" />
@@ -162,8 +167,14 @@
         <label class="form-label" for="listing-contact">Contact (optional)</label>
         <input class="form-input" type="text" id="listing-contact" name="contact"
                maxlength="100" placeholder="Email or phone" autocomplete="off" />
-        <div class="form-hint">Not shown publicly until you confirm — listing stored locally only.</div>
+        <div class="form-hint">Stored server-side. Not shared publicly.</div>
       </div>
+      <!--
+        TURNSTILE GO-LIVE: uncomment the div below to activate CAPTCHA.
+        Requires the script tag in <head> and TURNSTILE_SECRET on the server.
+        Replace data-sitekey with your Cloudflare Turnstile site key.
+      -->
+      <!-- <div id="turnstile-widget" class="cf-turnstile" data-sitekey="YOUR_SITE_KEY_HERE" data-theme="light"></div> -->
     </form>
   </div>
   <div class="modal__footer">

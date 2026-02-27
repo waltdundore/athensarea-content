@@ -12,19 +12,24 @@ services:
       - proxy
     restart: unless-stopped
 
-  # RSS proxy
+  # RSS proxy + Classifieds API
   proxy:
     image: node:20-alpine
     working_dir: /app
     volumes:
       - ./proxy:/app
+      - listings-data:/data
     command: sh -c "npm install --omit=dev --silent && node server.js"
     environment:
       PORT: "3001"
-      RATE_LIMIT_MAX: "60"
+      DB_PATH: "/data/listings.db"
+      TURNSTILE_SECRET: ""   # Set to your Cloudflare Turnstile secret key at go-live
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+volumes:
+  listings-data:

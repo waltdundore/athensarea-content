@@ -128,16 +128,17 @@ img {
 }
 
 a {
-  color: var(--color-text-link);
+  color: var(--color-text-primary);
   text-decoration: none;
 }
 
 a:hover {
-  text-decoration: underline;
+  color: var(--color-brand);
+  text-decoration: none;
 }
 
 a:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -150,7 +151,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: 2px;
 }
 
@@ -194,10 +195,10 @@ ul, ol {
 
 .site-logo {
   font-family: var(--font-serif);
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--color-text-inverse);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
 
@@ -302,17 +303,23 @@ ul, ol {
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-8);
   padding-bottom: var(--space-3);
   border-bottom: 2px solid var(--color-brand);
 }
 
 .section-title {
   font-family: var(--font-serif);
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--color-text-primary);
   line-height: var(--leading-tight);
+}
+
+@media (min-width: 1024px) {
+  .section-title {
+    font-size: var(--text-3xl);
+  }
 }
 
 .section-action {
