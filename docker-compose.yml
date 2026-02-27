@@ -12,7 +12,11 @@ services:
 
   # RSS proxy
   proxy:
-    build: ./proxy
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./proxy:/app
+    command: sh -c "npm install --omit=dev --silent && node server.js"
     environment:
       PORT: "3001"
       RATE_LIMIT_MAX: "60"
