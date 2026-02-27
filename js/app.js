@@ -34,16 +34,20 @@ export const SOURCES = [
   {
     id:      'redblack',
     label:   'Red & Black',
-    rss:     'https://redandblack.com/feed/',
+    rss:     null,
     jsonUrl: null,
     badge:   'badge--redblack',
+    disabled: true,
+    devNote:  'Feed URL unconfirmed — in development',
   },
   {
     id:      'ajc',
     label:   'AJC Athens',
-    rss:     'https://www.ajc.com/local/athens/rss.xml',
+    rss:     null,
     jsonUrl: null,
     badge:   'badge--ajc',
+    disabled: true,
+    devNote:  'Feed URL unconfirmed — in development',
   },
   {
     id:      'reddit',

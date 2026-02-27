@@ -200,11 +200,23 @@ ul, ol {
   color: var(--color-text-inverse);
   letter-spacing: -0.04em;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .site-logo:hover {
   text-decoration: none;
   opacity: 0.9;
+}
+
+.site-logo__img {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: var(--color-text-inverse);
 }
 
 .site-tagline {

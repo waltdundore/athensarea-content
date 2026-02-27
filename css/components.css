@@ -199,6 +199,13 @@
   color: var(--color-text-inverse);
 }
 
+/* Disabled source chip — coming soon */
+.chip--disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Separator between date chips and source chips */
 .filter-bar__divider {
   width: 1px;

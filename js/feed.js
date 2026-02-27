@@ -38,6 +38,7 @@ async function fetchAllSources(sources) {
  * @param {typeof SOURCES[0]} source
  */
 async function fetchSource(source) {
+  if (source.disabled) { return; }
   try {
     const articles = source.jsonUrl
       ? await fetchReddit(source)

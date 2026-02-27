@@ -89,7 +89,18 @@ export function initFilter(sources) {
   const MAX_SRC = sources.length;
   for (let i = 0; i < MAX_SRC; i++) {
     const source = sources[i];
-    const chip   = createChip(source.label, false);
+
+    if (source.disabled) {
+      const chip = document.createElement('span');
+      chip.className = 'chip chip--disabled';
+      chip.textContent = source.label;
+      chip.title = source.devNote || 'Coming soon';
+      chip.setAttribute('aria-disabled', 'true');
+      bar.appendChild(chip);
+      continue;
+    }
+
+    const chip = createChip(source.label, false);
     chip.dataset.sourceId = source.id;
 
     chip.addEventListener('click', () => {
