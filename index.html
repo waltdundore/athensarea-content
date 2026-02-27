@@ -49,8 +49,16 @@
           <h1 class="section-title" id="news-heading">Latest News</h1>
         </div>
 
-        <!-- Filter chips — populated by filter.js -->
-        <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter by source"></div>
+        <!-- Filter toggle — chips hidden until requested (progressive disclosure) -->
+        <div class="filter-toggle-bar">
+          <button class="filter-toggle" id="filter-toggle"
+                  aria-expanded="false" aria-controls="filter-panel">
+            Filter <span id="filter-active-count" hidden></span>
+          </button>
+        </div>
+        <div id="filter-panel" class="filter-panel" hidden>
+          <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter articles"></div>
+        </div>
 
         <!-- Article feed — populated by feed.js; aria-live for screen reader updates -->
         <div id="articles" class="card-list" aria-live="polite" aria-label="News articles">
@@ -104,7 +112,7 @@
 
       </aside>
 
-      <!-- === CLASSIFIEDS === -->
+      <!-- === CLASSIFIEDS (secondary section) === -->
       <section class="content-classifieds" id="classifieds" aria-labelledby="classifieds-heading">
         <div class="section-header">
           <h2 class="section-title" id="classifieds-heading">Classifieds</h2>

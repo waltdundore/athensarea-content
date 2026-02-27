@@ -307,7 +307,12 @@ ul, ol {
 
 .content-news       { grid-area: news; }
 .content-sidebar    { grid-area: sidebar; }
-.content-classifieds { grid-area: classifieds; }
+.content-classifieds {
+  grid-area: classifieds;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-8);
+  margin-top: var(--space-4);
+}
 
 /* Section headers */
 .section-header {

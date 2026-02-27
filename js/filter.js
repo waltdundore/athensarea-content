@@ -46,12 +46,45 @@ export function isSourceVisible(id) {
 }
 
 /**
+ * Bind the filter toggle button to show/hide the filter panel.
+ */
+function bindToggle() {
+  const btn   = document.getElementById('filter-toggle');
+  const panel = document.getElementById('filter-panel');
+  if (!btn || !panel) { return; }
+
+  btn.addEventListener('click', () => {
+    const isOpen = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!isOpen));
+    panel.hidden = isOpen;
+  });
+}
+
+/**
+ * Update the active filter count badge on the toggle button.
+ */
+function updateToggleBadge() {
+  const countEl = document.getElementById('filter-active-count');
+  if (!countEl) { return; }
+
+  const total = activeFilters.size + (activeDate !== 'all' ? 1 : 0);
+  if (total > 0) {
+    countEl.textContent = String(total);
+    countEl.hidden = false;
+  } else {
+    countEl.hidden = true;
+  }
+}
+
+/**
  * Render date chips then source chips into #filter-bar.
  * @param {import('./app.js').SOURCES} sources
  */
 export function initFilter(sources) {
   const bar = document.getElementById('filter-bar');
   if (!bar) { return; }
+
+  bindToggle();
 
   // --- Date chips ---
   const MAX_DATE = DATE_OPTIONS.length;
@@ -154,6 +187,7 @@ function syncSourceChips(bar) {
 }
 
 function notifyChange() {
+  updateToggleBadge();
   if (typeof onFilterChange === 'function') {
     onFilterChange(activeFilters);
   }
