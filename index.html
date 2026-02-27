@@ -1,71 +1,177 @@
-<!-- AthensArea.net - Newspaper Layout Frontend -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AthensArea.net</title>
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; connect-src 'self' https://api.weather.gov https://www.reddit.com; img-src 'self' data: https:; style-src 'self';" />
+  <title>AthensArea.net — Athens, GA Local News</title>
+  <meta name="description" content="Hyper-local news, events, and classifieds for Athens, Georgia." />
   <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/components.css" />
 </head>
-<body class="bg-white text-black font-serif">
-  <header class="bg-red-700 text-white p-4 text-center">
-    <h1 class="text-3xl font-bold">AthensArea.net</h1>
-    <p class="text-sm">Your source for hyper-local news & events</p>
+<body>
+
+<div class="site-wrapper">
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <a href="/" class="site-logo" aria-label="AthensArea.net — home">AthensArea.net</a>
+      <span class="site-tagline" aria-hidden="true">Athens, GA Local News &amp; Community</span>
+    </div>
   </header>
 
-  <nav class="bg-gray-100 p-2 text-sm text-center">
-    <a href="#news" class="mx-2">News</a>
-    <a href="#weather" class="mx-2">Weather</a>
-    <a href="#classifieds" class="mx-2">Classifieds</a>
-    <a href="#ads" class="mx-2">Ads</a>
-    <a href="#login" class="mx-2">Login</a>
-    <a href="#forum" class="mx-2">Forum</a>
+  <!-- ===== NAV ===== -->
+  <nav class="site-nav" aria-label="Site sections">
+    <div class="site-nav__inner">
+      <a href="#news"        class="nav-link is-active">News</a>
+      <a href="#weather"     class="nav-link">Weather</a>
+      <a href="#classifieds" class="nav-link">Classifieds</a>
+    </div>
   </nav>
 
-  <main class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-    <section id="news" class="col-span-2">
-      <h2 class="text-xl font-bold border-b pb-2 mb-4">Latest News</h2>
-      <div id="articles"></div>
-    </section>
+  <!-- ===== MAIN ===== -->
+  <main class="site-main" id="main-content">
+    <div class="content-grid">
 
-    <aside id="weather" class="bg-gray-50 p-4">
-      <h2 class="text-lg font-semibold">Weather</h2>
-      <p id="weather-data">Sunny, 85°F</p>
-    </aside>
+      <!-- === NEWS === -->
+      <section class="content-news" id="news" aria-labelledby="news-heading">
+        <div class="section-header">
+          <h1 class="section-title" id="news-heading">Latest News</h1>
+        </div>
 
-    <section id="classifieds" class="col-span-1">
-      <h2 class="text-xl font-bold border-b pb-2 mb-4">Classifieds</h2>
-      <div id="classifieds-list">No items yet.</div>
-    </section>
+        <!-- Filter chips — populated by filter.js -->
+        <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter by source"></div>
 
-    <section id="ads" class="col-span-1">
-      <h2 class="text-xl font-bold border-b pb-2 mb-4">Sponsored</h2>
-      <div id="ads-container">Coming soon.</div>
-    </section>
+        <!-- Article feed — populated by feed.js; aria-live for screen reader updates -->
+        <div id="articles" class="card-list" aria-live="polite" aria-label="News articles">
+          <!-- Skeleton loading cards (replaced on load) -->
+          <article class="card card--skeleton" aria-hidden="true">
+            <div class="card__body">
+              <div class="card__meta">
+                <span class="skeleton skeleton--meta"></span>
+              </div>
+              <div class="skeleton skeleton--title" style="margin-bottom: 0.75rem;"></div>
+              <div class="skeleton skeleton--text"></div>
+              <div class="skeleton skeleton--text" style="width: 85%; margin-top: 0.25rem;"></div>
+            </div>
+          </article>
+          <article class="card card--skeleton" aria-hidden="true">
+            <div class="card__body">
+              <div class="card__meta">
+                <span class="skeleton skeleton--meta"></span>
+              </div>
+              <div class="skeleton skeleton--title" style="margin-bottom: 0.75rem;"></div>
+              <div class="skeleton skeleton--text"></div>
+              <div class="skeleton skeleton--text" style="width: 70%; margin-top: 0.25rem;"></div>
+            </div>
+          </article>
+          <article class="card card--skeleton" aria-hidden="true">
+            <div class="card__body">
+              <div class="card__meta">
+                <span class="skeleton skeleton--meta"></span>
+              </div>
+              <div class="skeleton skeleton--title" style="margin-bottom: 0.75rem;"></div>
+              <div class="skeleton skeleton--text"></div>
+              <div class="skeleton skeleton--text" style="width: 90%; margin-top: 0.25rem;"></div>
+            </div>
+          </article>
+        </div>
+      </section>
 
-    <section id="login" class="col-span-3 mt-8 text-center">
-      <button class="bg-red-700 text-white px-4 py-2 rounded">Login</button>
-    </section>
+      <!-- === SIDEBAR === -->
+      <aside class="content-sidebar" aria-label="Sidebar">
+
+        <!-- Weather widget -->
+        <div class="widget" id="weather" aria-labelledby="weather-heading">
+          <div class="widget__header" id="weather-heading">Weather — Athens, GA</div>
+          <div class="widget__body">
+            <div id="weather-display" class="weather-current" aria-live="polite">
+              <div class="skeleton skeleton--title" style="width: 60%; margin: 0 auto 0.5rem;"></div>
+              <div class="skeleton skeleton--text" style="width: 80%; margin: 0 auto;"></div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- === CLASSIFIEDS === -->
+      <section class="content-classifieds" id="classifieds" aria-labelledby="classifieds-heading">
+        <div class="section-header">
+          <h2 class="section-title" id="classifieds-heading">Classifieds</h2>
+          <button class="btn btn--primary" id="post-listing-btn" aria-controls="post-modal">
+            Post a Listing
+          </button>
+        </div>
+
+        <!-- Category tabs — populated by classifieds.js -->
+        <div class="tab-list" id="classifieds-tabs" role="tablist" aria-label="Classified categories"></div>
+
+        <!-- Listings — populated by classifieds.js -->
+        <div id="classifieds-list" class="listing-list" aria-live="polite" aria-label="Classified listings">
+          <div class="empty-state">
+            <p class="empty-state__message">No listings yet. Be the first to post!</p>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.content-grid -->
   </main>
 
-  <footer class="text-center text-sm text-gray-500 p-4">
-    &copy; 2025 AthensArea.net — A local project by and for the Classic City
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer" role="contentinfo">
+    <p>&copy; 2025 AthensArea.net &mdash; A local project by and for the Classic City</p>
   </footer>
 
-  <script>
-    fetch("http://localhost:8055/items/articles")
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById("articles");
-        data.data.forEach(article => {
-          const div = document.createElement("div");
-          div.className = "mb-6";
-          div.innerHTML = `<h3 class="text-lg font-bold">${article.title}</h3><p>${article.content}</p>`;
-          container.appendChild(div);
-        });
-      })
-      .catch(err => console.error("Error fetching articles:", err));
-  </script>
+</div><!-- /.site-wrapper -->
+
+<!-- ===== POST LISTING MODAL ===== -->
+<dialog class="modal" id="post-modal" aria-labelledby="modal-title">
+  <div class="modal__header">
+    <h2 class="modal__title" id="modal-title">Post a Classified Listing</h2>
+    <button class="modal__close" id="modal-close" aria-label="Close dialog">&#x2715;</button>
+  </div>
+  <div class="modal__body">
+    <form id="listing-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="listing-category">Category</label>
+        <select class="form-select" id="listing-category" name="category" required>
+          <option value="">Select a category&hellip;</option>
+          <option value="Housing">Housing</option>
+          <option value="Jobs">Jobs</option>
+          <option value="For Sale">For Sale</option>
+          <option value="Services">Services</option>
+          <option value="Community">Community</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="listing-title">Title</label>
+        <input class="form-input" type="text" id="listing-title" name="title"
+               maxlength="80" placeholder="Brief, descriptive title" required
+               autocomplete="off" />
+        <div class="form-char-count" id="title-count" aria-live="polite">0 / 80</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="listing-description">Description</label>
+        <textarea class="form-textarea" id="listing-description" name="description"
+                  maxlength="500" rows="4" placeholder="Details about your listing" required></textarea>
+        <div class="form-char-count" id="desc-count" aria-live="polite">0 / 500</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="listing-contact">Contact (optional)</label>
+        <input class="form-input" type="text" id="listing-contact" name="contact"
+               maxlength="100" placeholder="Email or phone" autocomplete="off" />
+        <div class="form-hint">Not shown publicly until you confirm — listing stored locally only.</div>
+      </div>
+    </form>
+  </div>
+  <div class="modal__footer">
+    <button type="button" class="btn btn--secondary" id="modal-cancel">Cancel</button>
+    <button type="submit" class="btn btn--primary" id="modal-submit" form="listing-form">Post Listing</button>
+  </div>
+</dialog>
+
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>
-
