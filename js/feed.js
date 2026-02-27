@@ -196,6 +196,7 @@ function renderFiltered(activeIds) {
   if (visible.length === 0) {
     container.innerHTML =
       '<div class="empty-state"><p class="empty-state__message">No articles match the selected filters.</p></div>';
+    updateArticleCount(0);
     return;
   }
 
@@ -207,6 +208,17 @@ function renderFiltered(activeIds) {
   for (let i = 0; i < MAX; i++) {
     container.appendChild(buildCard(sorted[i], i === 0));
   }
+  updateArticleCount(MAX);
+}
+
+/**
+ * Update the article count display in the news section header.
+ * @param {number} count
+ */
+function updateArticleCount(count) {
+  const el = document.getElementById('article-count');
+  if (!el) { return; }
+  el.textContent = count > 0 ? `${count} stories` : '';
 }
 
 /**
@@ -217,16 +229,13 @@ function renderFiltered(activeIds) {
 function buildCard(article, isHero) {
   const el = document.createElement('article');
   el.className = 'card' + (isHero ? ' card--hero' : '');
-
-  const dateStr = new Date(article.date).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric',
-  });
+  el.dataset.source = article.sourceId;
 
   el.innerHTML = `
     <div class="card__body">
       <div class="card__meta">
         <span class="badge ${esc(article.badge)}">${esc(article.label)}</span>
-        <span class="card__date">${dateStr}</span>
+        <span class="card__date">${timeAgo(article.date)}</span>
       </div>
       <h2 class="card__title">
         <a href="${esc(article.link)}" target="_blank" rel="noopener noreferrer">
@@ -238,6 +247,30 @@ function buildCard(article, isHero) {
   `;
 
   return el;
+}
+
+/**
+ * Returns a human-friendly relative timestamp.
+ * @param {string} isoDate
+ * @returns {string}
+ */
+function timeAgo(isoDate) {
+  const now  = Date.now();
+  const then = new Date(isoDate).getTime();
+  const diff = now - then;
+
+  const MINUTE = 60 * 1000;
+  const HOUR   = 60 * MINUTE;
+  const DAY    = 24 * HOUR;
+  const WEEK   = 7 * DAY;
+
+  if (diff < HOUR)   { return `${Math.max(1, Math.floor(diff / MINUTE))}m ago`; }
+  if (diff < DAY)    { return `${Math.floor(diff / HOUR)}h ago`; }
+  if (diff < 2 * DAY){ return 'Yesterday'; }
+  if (diff < WEEK)   {
+    return new Date(isoDate).toLocaleDateString('en-US', { weekday: 'short' });
+  }
+  return new Date(isoDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 /* ============================================================

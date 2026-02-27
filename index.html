@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; connect-src 'self' https://api.weather.gov https://www.reddit.com https://challenges.cloudflare.com; img-src 'self' data: https:; style-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com;" />
+        content="default-src 'self'; connect-src 'self' https://api.weather.gov https://www.reddit.com https://challenges.cloudflare.com; img-src 'self' data: https:; style-src 'self' https://challenges.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com;" />
   <!--
     TURNSTILE GO-LIVE: uncomment the script tag below and the widget div inside the modal form.
     Then set TURNSTILE_SECRET in docker-compose.yml environment.
@@ -12,6 +12,9 @@
   <!-- <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script> -->
   <title>AthensArea.net — Athens, GA Local News</title>
   <meta name="description" content="Hyper-local news, events, and classifieds for Athens, Georgia." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="stylesheet" href="/css/components.css" />
 </head>
@@ -47,6 +50,7 @@
       <section class="content-news" id="news" aria-labelledby="news-heading">
         <div class="section-header">
           <h1 class="section-title" id="news-heading">Latest News</h1>
+          <span id="article-count" class="article-count" aria-live="polite"></span>
         </div>
 
         <!-- Filter toggle — chips hidden until requested (progressive disclosure) -->
@@ -54,9 +58,12 @@
           <button class="filter-toggle" id="filter-toggle"
                   aria-expanded="false" aria-controls="filter-panel">
             Filter <span id="filter-active-count" hidden></span>
+            <svg class="filter-toggle__icon" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </button>
         </div>
-        <div id="filter-panel" class="filter-panel" hidden>
+        <div id="filter-panel" class="filter-panel">
           <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter articles"></div>
         </div>
 
@@ -137,7 +144,8 @@
 
   <!-- ===== FOOTER ===== -->
   <footer class="site-footer" role="contentinfo">
-    <p>&copy; 2025 AthensArea.net &mdash; A local project by and for the Classic City</p>
+    <p>&copy; 2026 AthensArea.net &mdash; A local project by and for the Classic City</p>
+    <p class="footer-sources">Sources: <a href="https://flagpole.com" target="_blank" rel="noopener">Flagpole</a> &middot; <a href="https://www.wuga.org" target="_blank" rel="noopener">WUGA</a> &middot; <a href="https://athenspoliticsnerd.com" target="_blank" rel="noopener">Athens Politics Nerd</a> &middot; <a href="https://reddit.com/r/Athens" target="_blank" rel="noopener">r/Athens</a></p>
   </footer>
 
 </div><!-- /.site-wrapper -->

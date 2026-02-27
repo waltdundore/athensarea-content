@@ -62,16 +62,36 @@ async function fetchCurrentPeriod(forecastUrl) {
   return periods[0];
 }
 
+const FORECAST_PAGE = 'https://forecast.weather.gov/MapClick.php?CityName=Athens&state=GA&site=FFC&textField1=33.9519&textField2=-83.3576';
+
+/**
+ * Parse "High near XX" or "Low around XX" from NWS detailed forecast text.
+ * @param {string} text
+ * @returns {string}
+ */
+function parseHighLow(text) {
+  if (!text) { return ''; }
+  const high = text.match(/high\s+(?:near|around|of)\s+(\d+)/i);
+  const low  = text.match(/low\s+(?:near|around|of)\s+(\d+)/i);
+  const parts = [];
+  if (high) { parts.push(`H: ${high[1]}°`); }
+  if (low)  { parts.push(`L: ${low[1]}°`); }
+  return parts.join('  ');
+}
+
 /**
  * @param {HTMLElement} display
- * @param {{name: string, temperature: number, temperatureUnit: string, shortForecast: string}} period
+ * @param {{name: string, temperature: number, temperatureUnit: string, shortForecast: string, detailedForecast: string}} period
  */
 function renderWeather(display, period) {
+  const highLow = parseHighLow(period.detailedForecast);
   display.innerHTML = `
     <div class="weather-current">
       <div class="weather-temp">${period.temperature}&deg;${period.temperatureUnit}</div>
       <div class="weather-desc">${esc(period.shortForecast)}</div>
+      ${highLow ? `<div class="weather-highlow">${highLow}</div>` : ''}
       <div class="weather-meta">${esc(period.name)} &mdash; Athens, GA</div>
+      <a class="weather-link" href="${FORECAST_PAGE}" target="_blank" rel="noopener noreferrer">Full forecast &rarr;</a>
     </div>
   `;
 }

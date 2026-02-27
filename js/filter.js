@@ -56,7 +56,7 @@ function bindToggle() {
   btn.addEventListener('click', () => {
     const isOpen = btn.getAttribute('aria-expanded') === 'true';
     btn.setAttribute('aria-expanded', String(!isOpen));
-    panel.hidden = isOpen;
+    panel.classList.toggle('is-open', !isOpen);
   });
 }
 

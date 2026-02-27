@@ -26,17 +26,23 @@
 .card {
   background-color: var(--color-surface);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-subtle);
+  border-left: 3px solid var(--color-border);
   overflow: hidden;
-  transition:
-    box-shadow var(--transition-fast),
-    transform var(--transition-fast);
+  transition: box-shadow var(--transition-fast);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
+
+/* Source-colored left border accent */
+.card[data-source="flagpole"] { border-left-color: var(--color-badge-flagpole); }
+.card[data-source="apn"]      { border-left-color: var(--color-badge-apn); }
+.card[data-source="wuga"]     { border-left-color: var(--color-badge-wuga); }
+.card[data-source="reddit"]   { border-left-color: var(--color-badge-reddit); }
+.card[data-source="redblack"] { border-left-color: var(--color-badge-redblack); }
+.card[data-source="ajc"]      { border-left-color: var(--color-badge-ajc); }
 
 .card__image {
   width: 100%;
@@ -91,7 +97,11 @@
   color: var(--color-text-tertiary);
 }
 
-/* Hero card — larger treatment for top story */
+/* Hero card — dominant treatment for top story */
+.card--hero {
+  border-left-width: 4px;
+}
+
 .card--hero .card__title {
   font-size: var(--text-2xl);
 }
@@ -104,14 +114,24 @@
 
 .card--hero .card__excerpt {
   font-size: var(--text-base);
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 5;
 }
 
-/* Card list — stacked feed */
+/* Card list — editorial grid: hero full-width, rest 2-col */
 .card-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+.card-list > .card:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .card-list {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* Card skeleton states */
@@ -141,7 +161,7 @@
   font-size: var(--text-xs);
   font-weight: 600;
   font-family: var(--font-sans);
-  padding: 2px var(--space-2);
+  padding: 3px var(--space-2);
   border-radius: var(--radius-full);
   line-height: 1;
   white-space: nowrap;
@@ -236,6 +256,15 @@
   color: var(--color-text-inverse);
 }
 
+.filter-toggle__icon {
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.filter-toggle[aria-expanded="true"] .filter-toggle__icon {
+  transform: rotate(180deg);
+}
+
 /* Active filter count badge on button */
 #filter-active-count {
   background-color: var(--color-text-inverse);
@@ -249,11 +278,23 @@
 }
 
 .filter-panel {
-  margin-bottom: var(--space-5);
   padding: var(--space-4);
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  margin-bottom: 0;
+  transition:
+    max-height 300ms ease,
+    opacity 200ms ease,
+    margin-bottom 300ms ease;
+}
+
+.filter-panel.is-open {
+  max-height: 400px;
+  opacity: 1;
+  margin-bottom: var(--space-5);
 }
 
 /* Disabled source chip — coming soon */
@@ -423,10 +464,30 @@
   margin-top: var(--space-1);
 }
 
+.weather-highlow {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  letter-spacing: 0.04em;
+}
+
 .weather-meta {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   margin-top: var(--space-3);
+}
+
+.weather-link {
+  display: inline-block;
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.weather-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .weather-error {
@@ -465,6 +526,7 @@
 .btn--primary {
   background-color: var(--color-brand);
   color: var(--color-text-inverse);
+  border-radius: var(--radius-sm);
 }
 
 .btn--primary:hover {
