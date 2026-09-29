@@ -27,8 +27,8 @@ make check    # static checks: JS syntax, compose config, index.html asset refs
 
 `.env` and `.lemmy/` are git-ignored and blocked from the web root by
 `nginx.conf`; `nginx.conf` also 404s the non-site repo paths (`/proxy/`,
-`/lemmy/`, `Makefile`, `docker-compose.yml`, `README.md`, `LICENSE`, `SPEC.md`,
-`AUDIT.md`, dotfiles).
+`/lemmy/`, `nginx.conf`, `Makefile`, `docker-compose.yml`, `README.md`,
+`LICENSE`, `SPEC.md`, `AUDIT.md`, dotfiles).
 
 ### Turnstile (classifieds anti-abuse)
 
@@ -38,7 +38,8 @@ one without the other:
 - both empty → the form posts without a CAPTCHA;
 - secret without site key → the widget cannot render and **every post is
   rejected** (the proxy logs a startup warning);
-- site key without secret → the widget shows but is never verified.
+- site key without secret → `GET /api/config` reports Turnstile inactive, so
+  **no widget is rendered and posts go through unverified** (fail-open).
 
 After changing either key: `docker compose up -d proxy`. The client fetches
 `GET /api/config` when the post modal opens and only loads

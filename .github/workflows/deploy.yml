@@ -32,7 +32,9 @@ jobs:
       # Must run BEFORE up: if .lemmy/config.hjson is missing, Docker creates a
       # directory at the bind-mount path and Lemmy refuses to start.
       - name: Render Lemmy config
-        run: make config
+        run: |
+          command -v envsubst || sudo apt-get install -y gettext
+          make config
 
       - name: Set up SSH
         run: |
