@@ -5,6 +5,7 @@
  *   GET  /api/rss?url=...        Whitelist-only RSS proxy
  *   GET  /api/listings           Fetch classifieds (optional ?category=)
  *   POST /api/listings           Create classified listing
+ *   DELETE /api/listings/:id     Remove a classified listing
  *   GET  /api/config             Client feature config (Turnstile flag + public site key)
  *   GET  /health                 Health check
  *
@@ -68,6 +69,8 @@ const stmtAll = db.prepare(
 const stmtByCategory = db.prepare(
   'SELECT * FROM listings WHERE category = ? ORDER BY created_at DESC'
 );
+
+const stmtDelete = db.prepare('DELETE FROM listings WHERE id = ?');
 
 /* ============================================================
    EXPRESS APP
@@ -138,6 +141,20 @@ app.post('/api/listings', async (req, res) => {
 
   stmtInsert.run(listing);
   res.status(201).json(listing);
+});
+
+/* ============================================================
+   DELETE /api/listings/:id
+   ============================================================ */
+
+app.delete('/api/listings/:id', (req, res) => {
+  const result = stmtDelete.run(req.params.id);
+
+  if (result.changes === 0) {
+    res.status(404).json({ error: 'Listing not found' });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 /* ============================================================

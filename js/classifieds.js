@@ -1,6 +1,6 @@
 /**
  * classifieds.js — Listings tabs, post modal, API persistence
- * Backend: POST/GET /api/listings (proxy/server.js → SQLite)
+ * Backend: GET/POST/DELETE /api/listings (proxy/server.js → SQLite)
  *
  * Cloudflare Turnstile: enabled server-side. On modal open we fetch
  * GET /api/config; when the server reports Turnstile active we load the
@@ -26,6 +26,7 @@ export function initClassifieds() {
   loadAndRenderListings();
   bindModal();
   bindForm();
+  bindDelete();
 }
 
 /* ============================================================
@@ -132,10 +133,59 @@ function buildListingCard(listing) {
     <div class="listing-card__footer">
       <span>${dateStr}</span>
       ${listing.contact ? `<span>${esc(listing.contact)}</span>` : ''}
+      <button type="button" class="listing-card__delete" data-delete-id="${esc(listing.id)}"
+        aria-label="Remove listing: ${esc(listing.title)}">&times;</button>
     </div>
   `;
 
   return article;
+}
+
+/* ============================================================
+   DELETE
+   ============================================================ */
+
+/** Delegated once: cards are re-rendered on every fetch/tab change. */
+function bindDelete() {
+  const container = document.getElementById('classifieds-list');
+  if (!container) { return; }
+
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-delete-id]');
+    if (btn) { deleteListing(btn.dataset.deleteId); }
+  });
+}
+
+/** @param {string} id */
+async function deleteListing(id) {
+  const container = document.getElementById('classifieds-list');
+  if (!container) { return; }
+
+  try {
+    const res = await fetch(`/api/listings/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Server error ${res.status}`);
+    }
+    await loadAndRenderListings();
+  } catch (err) {
+    showDeleteError(err.message || 'Could not remove listing. Please try again.');
+  }
+}
+
+/** @param {string} msg */
+function showDeleteError(msg) {
+  const container = document.getElementById('classifieds-list');
+  if (!container) { return; }
+
+  let err = container.querySelector('.listing-delete-error');
+  if (!err) {
+    err = document.createElement('p');
+    err.className = 'form-error listing-delete-error';
+    err.setAttribute('role', 'alert');
+    container.prepend(err);
+  }
+  err.textContent = msg;
 }
 
 /* ============================================================

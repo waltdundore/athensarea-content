@@ -413,6 +413,22 @@
   color: var(--color-text-tertiary);
 }
 
+.listing-card__delete {
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  border: none;
+  background: none;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.listing-card__delete:hover,
+.listing-card__delete:focus-visible {
+  color: #B91C1C; /* matches .form-error */
+}
+
 /* ============================================================
    WIDGET (sidebar blocks)
    ============================================================ */
