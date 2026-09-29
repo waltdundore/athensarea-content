@@ -19,6 +19,17 @@
 .skeleton--title { height: 1.4em; width: 75%; }
 .skeleton--meta  { height: 0.8em; width: 40%; }
 
+/* Placeholder geometry. Kept in CSS rather than style="" attributes: the site CSP
+   has no 'unsafe-hashes', so Chrome blocks every inline style attribute. */
+.card--skeleton .skeleton--title { margin-bottom: 0.75rem; }
+.skeleton--tail { margin-top: 0.25rem; }
+.skeleton--w85  { width: 85%; }
+.skeleton--w70  { width: 70%; }
+.skeleton--w90  { width: 90%; }
+
+.weather-current .skeleton--title { width: 60%; margin: 0 auto 0.5rem; }
+.weather-current .skeleton--text  { width: 80%; margin: 0 auto; }
+
 /* ============================================================
    CARDS
    ============================================================ */
