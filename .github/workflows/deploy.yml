@@ -1,0 +1,75 @@
+name: Deploy
+
+on:
+  push:
+    branches: [production]
+
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # .env and the rendered Lemmy config are never committed; they are
+      # materialized here and scp'd to the host (both are git-ignored, so the
+      # remote git pull cannot clobber them).
+      - name: Write .env from secrets
+        run: |
+          umask 077
+          cat > .env <<EOF
+          LEMMY_DOMAIN=${{ secrets.LEMMY_DOMAIN }}
+          LEMMY_HTTP_PORT=${{ secrets.LEMMY_HTTP_PORT }}
+          LEMMY_UI_HTTPS=${{ secrets.LEMMY_UI_HTTPS }}
+          LEMMY_DB_PASSWORD=${{ secrets.LEMMY_DB_PASSWORD }}
+          LEMMY_PICTRS_API_KEY=${{ secrets.LEMMY_PICTRS_API_KEY }}
+          TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET=${{ secrets.TURNSTILE_SECRET }}
+          EOF
+          chmod 600 .env
+
+      # Must run BEFORE up: if .lemmy/config.hjson is missing, Docker creates a
+      # directory at the bind-mount path and Lemmy refuses to start.
+      - name: Render Lemmy config
+        run: make config
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          # Host key pinning is mandatory — fail closed if the secret is unset.
+          test -s ~/.ssh/known_hosts
+
+      - name: Sync deployment files
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "mkdir -p '${{ secrets.DEPLOY_PATH }}/.staging'"
+          scp -i ~/.ssh/id_deploy .env .lemmy/config.hjson \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/.staging/"
+          ssh -i ~/.ssh/id_deploy "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd '${{ secrets.DEPLOY_PATH }}' && \
+             mkdir -p .lemmy && \
+             mv .staging/.env .env && chmod 600 .env && \
+             mv .staging/config.hjson .lemmy/config.hjson && chmod 600 .lemmy/config.hjson && \
+             rmdir .staging"
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd '${{ secrets.DEPLOY_PATH }}' && \
+             git pull --ff-only origin production && \
+             docker compose config -q && \
+             docker compose up -d --remove-orphans && \
+             docker compose restart proxy"
+        # `restart proxy` is required: `up -d` does not recreate containers whose
+        # config is unchanged, so an updated server.js would never be picked up.
+
+      - name: Smoke test
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "curl -fsS localhost:8888/ > /dev/null && \
+             cd '${{ secrets.DEPLOY_PATH }}' && \
+             docker compose exec -T proxy wget -qO- localhost:3001/health"
