@@ -1,2 +1,12 @@
 /.claude/
 .env
+
+# Rendered community config (generated from lemmy/config.hjson.template)
+.lemmy/
+
+# Node dependencies for the RSS/classifieds proxy
+proxy/node_modules/
+
+# PM coordination ledgers — not project content, never commit
+SPEC.md
+AUDIT.md

@@ -1,0 +1,18 @@
+{
+  # Rendered to .lemmy/config.hjson by `make config`. Edit this template, not the output.
+  # Site name, registration policy and theme are set once, in the browser, at
+  # http://<community>/setup — not here.
+  # Full reference: https://join-lemmy.org/docs/en/administration/configuration.html
+
+  hostname: "${LEMMY_DOMAIN}"
+
+  database: {
+    host: "lemmy-db"
+    password: "${LEMMY_DB_PASSWORD}"
+  }
+
+  pictrs: {
+    url: "http://lemmy-pictrs:8080/"
+    api_key: "${LEMMY_PICTRS_API_KEY}"
+  }
+}
