@@ -226,7 +226,6 @@ function bindForm() {
   const form      = document.getElementById('listing-form');
   const titleEl   = document.getElementById('listing-title');
   const descEl    = document.getElementById('listing-description');
-  const submitBtn = document.getElementById('modal-submit');
 
   if (!form) { return; }
 
@@ -240,12 +239,15 @@ function bindForm() {
       updateCharCount('desc-count', descEl.value.length, DESC_MAX));
   }
 
-  if (submitBtn) {
-    submitBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      submitListing(form);
-    });
-  }
+  // Handle 'submit' on the form, never click on the button. #modal-submit lives
+  // in the modal footer and is tied to the form with form="listing-form", so a
+  // click listener misses implicit submission (Enter in a text field) and
+  // form.requestSubmit(); those fell through to the form's default GET
+  // submission and reloaded the page without posting anything.
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitListing(form);
+  });
 }
 
 /**
