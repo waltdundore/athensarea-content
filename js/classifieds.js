@@ -2,9 +2,11 @@
  * classifieds.js — Listings tabs, post modal, API persistence
  * Backend: POST/GET /api/listings (proxy/server.js → SQLite)
  *
- * Cloudflare Turnstile: scaffolded, inactive until go-live.
- * To activate: uncomment the Turnstile widget block in index.html
- * and set TURNSTILE_SECRET in docker-compose.yml environment.
+ * Cloudflare Turnstile: enabled server-side. On modal open we fetch
+ * GET /api/config; when the server reports Turnstile active we load the
+ * Cloudflare script, render the widget with the returned public site key,
+ * and block submit until a token exists. With Turnstile disabled server-side
+ * the form posts as before.
  */
 
 const CATEGORIES  = ['All', 'Housing', 'Jobs', 'For Sale', 'Services', 'Community'];
@@ -13,6 +15,11 @@ const DESC_MAX    = 500;
 
 /** @type {string} */
 let activeCategory = 'All';
+
+/** Turnstile state: null config = not fetched yet. */
+let turnstileCfg      = null; // { enabled: boolean, siteKey: string } | null
+let turnstileToken    = null;
+let turnstileWidgetId = null;
 
 export function initClassifieds() {
   renderTabs();
@@ -143,7 +150,10 @@ function bindModal() {
 
   if (!dialog || !openBtn) { return; }
 
-  openBtn.addEventListener('click', () => { dialog.showModal(); });
+  openBtn.addEventListener('click', () => {
+    dialog.showModal();
+    setupTurnstile();
+  });
 
   if (closeBtn) {
     closeBtn.addEventListener('click', () => { dialog.close(); resetForm(); });
@@ -214,10 +224,11 @@ async function submitListing(form) {
   if (!title)    { form.title.focus();    return; }
   if (!description) { form.description.focus(); return; }
 
-  // --- Turnstile token (inactive until go-live) ---
-  // When Turnstile widget is uncommented in index.html, this will return a token.
-  // Server ignores the field when TURNSTILE_SECRET env var is unset.
-  const turnstileToken = getTurnstileToken();
+  // --- Turnstile gate: block submit with a visible error until solved ---
+  if (turnstileCfg && turnstileCfg.enabled && !turnstileToken) {
+    showTurnstileError('Please complete the security check first.');
+    return;
+  }
 
   const body = {
     category,
@@ -255,18 +266,114 @@ async function submitListing(form) {
   }
 }
 
-/**
- * Returns the Cloudflare Turnstile token if the widget is present and solved.
- * Returns null if the widget is not yet active (pre-go-live).
- * @returns {string|null}
- */
-function getTurnstileToken() {
-  // Turnstile widget is scaffolded in index.html but commented out.
-  // Uncomment the widget block and set TURNSTILE_SECRET on the server to activate.
-  if (typeof window.turnstile === 'undefined') { return null; }
-  const widget = document.getElementById('turnstile-widget');
-  if (!widget) { return null; }
-  return window.turnstile.getResponse(widget) || null;
+/* ============================================================
+   TURNSTILE — /api/config-driven widget
+   ============================================================ */
+
+/** Fetch /api/config once per page load, then render the widget if enabled. */
+async function setupTurnstile() {
+  if (!turnstileCfg) {
+    try {
+      const res = await fetch('/api/config', { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) { throw new Error(`config fetch ${res.status}`); }
+      const cfg = await res.json();
+      turnstileCfg = {
+        enabled: cfg.turnstile === true && typeof cfg.siteKey === 'string' && cfg.siteKey.length > 0,
+        siteKey: typeof cfg.siteKey === 'string' ? cfg.siteKey : '',
+      };
+    } catch (_) {
+      // Fail closed server-side: posts without a token are rejected with a
+      // visible error when TURNSTILE_SECRET is set.
+      turnstileCfg = { enabled: false, siteKey: '' };
+      return;
+    }
+  }
+
+  if (!turnstileCfg.enabled || turnstileWidgetId !== null) { return; }
+
+  try {
+    await loadTurnstileScript();
+    renderTurnstileWidget();
+  } catch (_) {
+    showTurnstileError('The security check could not be loaded. Please try again.');
+  }
+}
+
+/** @returns {Promise<void>} resolves when window.turnstile is available. */
+function loadTurnstileScript() {
+  if (window.turnstile) { return Promise.resolve(); }
+  const existing = document.getElementById('turnstile-script');
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('turnstile script failed')));
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script  = document.createElement('script');
+    script.id     = 'turnstile-script';
+    script.src    = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async  = true;
+    script.onload  = () => resolve();
+    script.onerror = () => reject(new Error('turnstile script failed'));
+    document.head.appendChild(script);
+  });
+}
+
+function renderTurnstileWidget() {
+  const slot     = getTurnstileSlot();
+  const widgetEl = slot.querySelector('#turnstile-widget');
+  hideTurnstileError();
+  turnstileWidgetId = window.turnstile.render(widgetEl, {
+    sitekey: turnstileCfg.siteKey,
+    theme:   'light',
+    callback: (token) => {
+      turnstileToken = token;
+      hideTurnstileError();
+    },
+    'expired-callback': () => {
+      turnstileToken = null;
+      showTurnstileError('Security check expired. Please solve it again.');
+    },
+    'error-callback': () => { turnstileToken = null; },
+  });
+}
+
+/** Create (once) the widget + error slot at the end of the listing form. */
+function getTurnstileSlot() {
+  let slot = document.getElementById('turnstile-slot');
+  if (slot) { return slot; }
+
+  slot = document.createElement('div');
+  slot.id       = 'turnstile-slot';
+  slot.className = 'form-group';
+
+  const widget  = document.createElement('div');
+  widget.id     = 'turnstile-widget';
+
+  const err     = document.createElement('p');
+  err.id        = 'turnstile-error';
+  err.className = 'form-error';
+  err.setAttribute('role', 'alert');
+  err.hidden    = true;
+
+  slot.appendChild(widget);
+  slot.appendChild(err);
+  document.getElementById('listing-form').appendChild(slot);
+  return slot;
+}
+
+/** @param {string} msg */
+function showTurnstileError(msg) {
+  const err = getTurnstileSlot().querySelector('#turnstile-error');
+  err.textContent = msg;
+  err.hidden      = false;
+}
+
+function hideTurnstileError() {
+  const slot = document.getElementById('turnstile-slot');
+  if (!slot) { return; }
+  slot.querySelector('#turnstile-error').hidden = true;
 }
 
 function resetForm() {
@@ -274,6 +381,12 @@ function resetForm() {
   if (form) { form.reset(); }
   updateCharCount('title-count', 0, TITLE_MAX);
   updateCharCount('desc-count',  0, DESC_MAX);
+
+  turnstileToken = null;
+  if (turnstileWidgetId !== null && window.turnstile) {
+    window.turnstile.reset(turnstileWidgetId);
+  }
+  hideTurnstileError();
 }
 
 /**

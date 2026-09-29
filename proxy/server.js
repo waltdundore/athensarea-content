@@ -5,6 +5,7 @@
  *   GET  /api/rss?url=...        Whitelist-only RSS proxy
  *   GET  /api/listings           Fetch classifieds (optional ?category=)
  *   POST /api/listings           Create classified listing
+ *   GET  /api/config             Client feature config (Turnstile flag + public site key)
  *   GET  /health                 Health check
  *
  * Cloudflare Turnstile: verified when TURNSTILE_SECRET env var is set.
@@ -18,9 +19,10 @@ const Database  = require('better-sqlite3');
 const crypto    = require('crypto');
 const path      = require('path');
 
-const PORT             = process.env.PORT           || 3001;
-const DB_PATH          = process.env.DB_PATH        || '/data/listings.db';
-const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '';
+const PORT               = process.env.PORT            || 3001;
+const DB_PATH            = process.env.DB_PATH         || '/data/listings.db';
+const TURNSTILE_SECRET   = process.env.TURNSTILE_SECRET || '';
+const TURNSTILE_SITE_KEY = process.env.TURNSTILE_SITE_KEY || '';
 const UPSTREAM_TIMEOUT = 8000;
 
 const VALID_CATEGORIES = new Set(['Housing', 'Jobs', 'For Sale', 'Services', 'Community']);
@@ -33,8 +35,6 @@ const WHITELIST = new Set([
   'https://flagpole.com/feed/',
   'https://athenspoliticsnerd.com/feed/',
   'https://www.wuga.org/local-news.rss',
-  'https://redandblack.com/feed/',
-  'https://www.ajc.com/local/athens/rss.xml',
 ]);
 
 /* ============================================================
@@ -141,6 +141,17 @@ app.post('/api/listings', async (req, res) => {
 });
 
 /* ============================================================
+   GET /api/config — Public client config (nothing secret)
+   ============================================================ */
+
+app.get('/api/config', (_req, res) => {
+  res.json({
+    turnstile: !!TURNSTILE_SECRET,
+    siteKey:   TURNSTILE_SITE_KEY,
+  });
+});
+
+/* ============================================================
    GET /api/rss — Whitelist-only RSS proxy
    ============================================================ */
 
@@ -241,5 +252,9 @@ async function verifyTurnstile(token) {
 app.listen(PORT, () => {
   console.log(`AthensArea proxy listening on port ${PORT}`);
   console.log(`  DB: ${DB_PATH}`);
-  console.log(`  Turnstile: ${TURNSTILE_SECRET ? 'ACTIVE' : 'inactive (pre-go-live)'}`);
+  console.log(`  Turnstile: ${TURNSTILE_SECRET ? 'ACTIVE' : 'inactive'}`);
+  if (TURNSTILE_SECRET && !TURNSTILE_SITE_KEY) {
+    console.warn('WARN: TURNSTILE_SECRET is set but TURNSTILE_SITE_KEY is empty — '
+      + 'the widget cannot render and all posts will be rejected. Set both keys together.');
+  }
 });

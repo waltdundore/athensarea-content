@@ -41,8 +41,6 @@
 .card[data-source="apn"]      { border-left-color: var(--color-badge-apn); }
 .card[data-source="wuga"]     { border-left-color: var(--color-badge-wuga); }
 .card[data-source="reddit"]   { border-left-color: var(--color-badge-reddit); }
-.card[data-source="redblack"] { border-left-color: var(--color-badge-redblack); }
-.card[data-source="ajc"]      { border-left-color: var(--color-badge-ajc); }
 
 .card__image {
   width: 100%;
@@ -172,9 +170,7 @@
 
 .badge--flagpole { background-color: var(--color-badge-flagpole); }
 .badge--apn      { background-color: var(--color-badge-apn); }
-.badge--redblack { background-color: var(--color-badge-redblack); }
 .badge--wuga     { background-color: var(--color-badge-wuga); }
-.badge--ajc      { background-color: var(--color-badge-ajc); }
 .badge--reddit   { background-color: var(--color-badge-reddit); }
 
 /* ============================================================
@@ -604,6 +600,11 @@
 .form-hint {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+}
+
+.form-error {
+  font-size: var(--text-xs);
+  color: #B91C1C;
 }
 
 .form-char-count {
