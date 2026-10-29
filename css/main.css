@@ -374,3 +374,329 @@ ul, ol {
   font-weight: 400;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   Standards layer — ahab/docs/UI-UX.md: Flexibility & Inclusion, Craft &
+   Quality, Simplicity & Clarity.
+
+   Additive on purpose: a later `:root` overrides earlier values, so every
+   original token name survives for css/components.css and js/*.js. Ratios are
+   computed WCAG 2.x values, not estimates.
+   ========================================================================== */
+
+:root {
+  /* Legibility floor. 0.694rem (11.1px) and 0.778rem (12.4px) put meta text
+     below the readable minimum, which law 10 treats as a surface defect. */
+  --text-xs: 0.8125rem; /* 13px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-md: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.25rem;
+
+  /* Leading tracks size inversely; tracking is size-specific, never one value
+     for every size. Tight on display, comfortable on body. */
+  --leading-tight: 1.08;
+  --leading-snug: 1.25;
+  --leading-normal: 1.6;
+  --leading-loose: 1.75;
+  --tracking-display: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-body: 0em;
+  --tracking-wide: 0.01em;
+
+  /* Contrast corrections. --color-text-tertiary was #A1A1A6 at 2.9:1, which
+     fails AA for text of any size. */
+  --color-text-secondary: #5B5B62; /* 6.74:1 on white, 6.23:1 on newsprint */
+  --color-text-tertiary: #6E6E75;  /* 5.06:1 on white, 4.68:1 on newsprint */
+  --color-border: #B4B4B9;         /* structural hairline, 2.06:1 */
+  --color-border-strong: #76767C;  /* 4.51:1 — inputs and other focusable boundaries */
+
+  /* Motion: exponential only, never bounce. Enter and exit mirror each other
+     so a reversible transition reads as one path. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --transition-fast: 150ms var(--ease-out);
+  --transition-normal: 220ms var(--ease-out);
+  --transition-enter: 220ms var(--ease-out);
+  --transition-exit: 150ms var(--ease-in);
+
+  /* One focus ring for the whole site: 6.85:1 against the light surface and
+     6.49:1 against the dark one, so it survives a theme flip. */
+  --focus-ring: #B5121B;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Touch targets: 44px minimum, 48px where the target is a primary action. */
+  --target-min: 44px;
+  --target-comfortable: 48px;
+
+  /* Material and scrim hooks for components.css. The reduced-transparency
+     fallback in this file's media layer swaps --color-material for a solid. */
+  --color-material: rgba(255, 255, 255, 0.72);
+  --color-material-border: rgba(255, 255, 255, 0.55);
+  --color-scrim: rgba(29, 29, 31, 0.42);
+  --material-blur: blur(20px) saturate(180%);
+
+  /* Chip pairs. The solid --color-badge-* hues stay for fills; labels use
+     fg-on-tint because white on #FF4500 measured 3.44:1 and failed AA. */
+  --color-badge-flagpole-fg: #14532A; --color-badge-flagpole-bg: #E6F2E9;
+  --color-badge-apn-fg: #14305E;      --color-badge-apn-bg: #E7EDF7;
+  --color-badge-wuga-fg: #0B4A86;     --color-badge-wuga-bg: #E4F0FB;
+  --color-badge-reddit-fg: #9A2C00;   --color-badge-reddit-bg: #FFEBE2;
+}
+
+/* Evening edition. Same semantic roles, warm charcoal, no pure black. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #1C1B19;
+    --color-surface-alt: #232220;
+    --color-surface-raised: #2A2826;
+    --color-border: #4A4744;
+    --color-border-subtle: #33312F;
+    --color-border-strong: #8A867E; /* 4.75:1 — meets 3:1 for input boundaries */
+
+    --color-text-primary: #F2EFE8;   /* 14.99:1 */
+    --color-text-secondary: #BDB8AE; /* 8.71:1 */
+    --color-text-tertiary: #9C978D;  /* 5.92:1, 5.05:1 on raised */
+    --color-text-inverse: #FFFFFF;
+
+    --color-brand: #D62E38;      /* 3.53:1 vs surface; white label 4.88:1 */
+    --color-brand-dark: #B5121B;
+    --color-brand-light: #3A1418;
+    --color-text-link: #F07C84;  /* 6.49:1 on surface, 5.54:1 on raised */
+
+    --color-badge-flagpole-fg: #A9DBB8; --color-badge-flagpole-bg: #1B2E20;
+    --color-badge-apn-fg: #B7CBEC;      --color-badge-apn-bg: #182742;
+    --color-badge-wuga-fg: #AED1F0;     --color-badge-wuga-bg: #12314F;
+    --color-badge-reddit-fg: #FFC9AF;   --color-badge-reddit-bg: #3D1D12;
+
+    --color-material: rgba(28, 27, 25, 0.72);
+    --color-material-border: rgba(255, 255, 255, 0.10);
+    --color-scrim: rgba(0, 0, 0, 0.62);
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.50);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.60);
+  }
+}
+
+/* ==========================================================================
+   Standards layer 2 — one focus ring, base typography, and the three
+   preference fallbacks (prefers-reduced-motion / -reduced-transparency /
+   -contrast). Element-level and token-level only: anything that has to beat a
+   class rule in components.css is handled there.
+   ========================================================================== */
+
+/* Keyboard focus that survives both themes. The element-qualified selectors
+   repeat the existing a:focus-visible / button:focus-visible rules so this
+   layer, loaded later, is the one that wins. */
+:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Base type: leading loosened for reading, tracking corrected per size. */
+body {
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-body);
+}
+
+h1 {
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+h2,
+h3 {
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+h4,
+h5,
+h6 {
+  letter-spacing: var(--tracking-body);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Motion is optional; the feedback it carried is not. Colours and opacity
+   still change — they simply change immediately. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-timing-function: linear !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* Translucency is a decoration, not information: it goes solid and the
+   material loses its blur, while the border keeps the layer legible. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --color-material: var(--color-surface);
+    --color-material-border: var(--color-border-strong);
+    --color-scrim: rgba(29, 29, 31, 0.86);
+    --material-blur: none;
+  }
+}
+
+/* More contrast: near-solid surfaces, and every boundary drawn with the
+   strong border instead of a translucent one. */
+@media (prefers-contrast: more) {
+  :root {
+    --color-material: var(--color-surface);
+    --color-material-border: var(--color-border-strong);
+    --material-blur: none;
+    --color-border: #76767C;
+    --color-border-subtle: #76767C;
+    --color-scrim: rgba(29, 29, 31, 0.86);
+  }
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root {
+    --color-border: #8A867E;
+    --color-border-subtle: #8A867E;
+    --color-scrim: rgba(0, 0, 0, 0.86);
+  }
+}
+
+/* ==========================================================================
+   Standards layer 3 — status colors as semantic roles.
+
+   components.css hard-coded #B91C1C for form errors: 6.47:1 on the light
+   surface but 2.66:1 on the evening surface, i.e. the message that matters
+   most went nearly invisible in dark mode.
+   ========================================================================== */
+
+:root {
+  --color-danger: #A81F16;     /* 7.31:1 white, 6.76:1 newsprint */
+  --color-danger-fg: #9A1C12;  /* 7.06:1 on the tint */
+  --color-danger-bg: #FDE9E7;
+  --color-success: #14532A;    /* 9.13:1, 8.45:1 */
+  --color-success-fg: #14532A; /* 7.93:1 on the tint */
+  --color-success-bg: #E6F2E9;
+  --color-notice: #8A5300;     /* 6.33:1, 5.86:1 */
+  --color-notice-fg: #7A4A00;  /* 6.63:1 on the tint */
+  --color-notice-bg: #FBF0DC;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-danger: #FF9A94;     /* 8.44:1 surface, 7.20:1 raised */
+    --color-danger-fg: #FF9A94;  /* 7.95:1 on the tint */
+    --color-danger-bg: #3A1512;
+    --color-success: #A9DBB8;    /* 11.07:1, 9.45:1 */
+    --color-success-fg: #A9DBB8; /* 9.27:1 on the tint */
+    --color-success-bg: #1B2E20;
+    --color-notice: #F5C97B;     /* 11.08:1, 9.46:1 */
+    --color-notice-fg: #F5C97B;  /* 8.73:1 on the tint */
+    --color-notice-bg: #3A2C12;
+  }
+}
+
+/* ============================================================
+   D — MEASURED FIXES (tokens)
+   ------------------------------------------------------------
+   Every value below is the answer to a rendered measurement of the
+   served page, not a palette decision. Kept additive so the token
+   names css/components.css and js/*.js already consume stay put.
+   ============================================================ */
+
+:root {
+  /* Label of the selected tab. In light mode the brand hue measured
+     6.34:1 on paper, which clears 4.5:1; see the dark override. */
+  --color-tab-active: var(--color-brand);
+
+  /* One duration for chrome-scale state changes. The doctrine ceiling is
+     250ms; the panel that used to run at 300ms now reads from here. */
+  --duration-chrome: 220ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Brand on ink measured 3.26:1 — fine as the underline (non-text,
+       3:1) but not as 14px text. The link tint is 6.00:1 on ink. */
+    --color-tab-active: var(--color-text-link);
+  }
+}
+
+/* ================================================================== *
+ * E — Brand in two roles (added 2026-09-30, evening-edition audit)
+ *
+ * Measured on the rendered page: the lifted brand hue reads 3.53:1 as
+ * copy on the dark page — under AA — while white on that same hue reads
+ * 4.88:1 as a label on a fill. One hue cannot do both jobs, so the two
+ * roles are named separately. Fills, rules and marks keep --color-brand;
+ * emphasis copy takes --color-brand-text.
+ * ================================================================== */
+
+:root {
+  /* Emphasis copy, day edition: the brand red itself, 6.34:1 on newsprint. */
+  --color-brand-text: var(--color-brand);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Evening edition: the rose tint, 6.49:1 on the page, 6.00:1 on cards. */
+    --color-brand-text: var(--color-text-link);
+  }
+}
+
+/* ================================================================== *
+ * G — Focus ring in the evening edition (added 2026-09-30)
+ *
+ * Measured on the rendered page: the day ring, #B5121B, sits at 2.51:1
+ * against the evening surface — a focus indicator that is not visible.
+ * A ring is a mark, so it needs 3:1; the rose tint gives 6.00:1 on the
+ * page and on cards. The masthead keeps its own inverse ring above.
+ * ================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --focus-ring: var(--color-text-link);
+  }
+}
+
+/* ================================================================== *
+ * I — Warning colour, both editions (added 2026-09-30)
+ *
+ * Amber had no token, so the character counter borrowed #D97706, which
+ * measures 3.19:1 on day paper. This is the word-colour counterpart to
+ * --color-danger one layer up.
+ * ================================================================== */
+
+:root {
+  --color-warning: #B45309;   /* 5.05:1 white, ~4.85:1 newsprint */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-warning: #E0A82E; /* 7.96:1 on the evening surface */
+  }
+}

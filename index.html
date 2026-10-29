@@ -7,6 +7,9 @@
         content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://api.weather.gov https://www.reddit.com https://challenges.cloudflare.com; img-src 'self' data: https:; style-src 'self' https://challenges.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com;" />
   <title>AthensArea.net — Athens, GA Local News</title>
   <meta name="description" content="Hyper-local news, events, and classifieds for Athens, Georgia." />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F7F6F3" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1C1B19" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
@@ -14,6 +17,8 @@
   <link rel="stylesheet" href="/css/components.css" />
 </head>
 <body>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
 
 <div class="site-wrapper">
 
@@ -39,7 +44,7 @@
   </nav>
 
   <!-- ===== MAIN ===== -->
-  <main class="site-main" id="main-content">
+  <main class="site-main" id="main-content" tabindex="-1">
     <div class="content-grid">
 
       <!-- === NEWS === -->

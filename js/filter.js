@@ -159,6 +159,7 @@ function createChip(label, isActive) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'chip' + (isActive ? ' is-active' : '');
+  btn.setAttribute('aria-pressed', String(isActive));
   btn.textContent = label;
   return btn;
 }
@@ -169,6 +170,7 @@ function syncDateChips(bar) {
   const MAX = chips.length;
   for (let i = 0; i < MAX; i++) {
     chips[i].classList.toggle('is-active', chips[i].dataset.dateId === activeDate);
+    chips[i].setAttribute('aria-pressed', String(chips[i].dataset.dateId === activeDate));
   }
 }
 
@@ -177,12 +179,14 @@ function syncSourceChips(bar) {
   const allChip = bar.querySelector('[data-source-all]');
   if (allChip) {
     allChip.classList.toggle('is-active', activeFilters.size === 0);
+    allChip.setAttribute('aria-pressed', String(activeFilters.size === 0));
   }
 
   const chips = bar.querySelectorAll('[data-source-id]');
   const MAX = chips.length;
   for (let i = 0; i < MAX; i++) {
     chips[i].classList.toggle('is-active', activeFilters.has(chips[i].dataset.sourceId));
+    chips[i].setAttribute('aria-pressed', String(activeFilters.has(chips[i].dataset.sourceId)));
   }
 }
 

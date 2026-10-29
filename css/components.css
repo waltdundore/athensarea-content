@@ -725,3 +725,329 @@
   font-size: var(--text-sm);
   margin-bottom: var(--space-4);
 }
+
+/* ==========================================================================
+   Standards layer — ahab/docs/UI-UX.md applied to components.
+
+   This file loads last, so these rules win where specificity ties. Only the
+   component-level work lives here: focus that must beat a suppressed outline,
+   touch targets, reversible press feedback, materials, and the dark-mode
+   surface change. Everything colour-valued is a token from main.css.
+   ========================================================================== */
+
+/* --- Focus: the one ring, everywhere ------------------------------------- */
+/* .form-input:focus previously dropped the outline and used a 15%-alpha glow,
+   which measured well under the 3:1 a focus indicator needs — and on the dark
+   surface the brand glow all but disappeared. */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.form-input:focus-visible,
+.form-select:focus-visible,
+.form-textarea:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--color-border-strong);
+  box-shadow: none;
+}
+
+.chip:focus-visible,
+.tab:focus-visible,
+.filter-toggle:focus-visible,
+.btn:focus-visible,
+.card__title a:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* --- Touch targets: 44px is the floor, not the design ------------------- */
+.btn,
+.chip,
+.tab,
+.filter-toggle {
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.listing-card__delete,
+#modal-close {
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Press feedback: reversible, exponential, never bouncy -------------- */
+.btn,
+.chip,
+.tab,
+.filter-toggle,
+.listing-card__delete,
+#modal-close {
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast), transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.btn:hover,
+.chip:hover,
+.tab:hover,
+.filter-toggle:hover {
+  transition-timing-function: var(--ease-out);
+}
+
+.btn:active,
+.chip:active,
+.tab:active,
+.filter-toggle:active,
+.listing-card__delete:active,
+#modal-close:active {
+  transform: scale(0.98);
+  transition-timing-function: var(--ease-in);
+}
+
+.card {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal),
+    border-color var(--transition-normal);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* --- Badges: label on a tint, so every source passes AA in both themes -- */
+/* White on the Reddit orange chip measured 3.44:1. The solid hues stay for
+   the card's left rule; only the label treatment changes. */
+.badge--flagpole { background-color: var(--color-badge-flagpole-bg); color: var(--color-badge-flagpole-fg); }
+.badge--apn      { background-color: var(--color-badge-apn-bg);      color: var(--color-badge-apn-fg); }
+.badge--wuga     { background-color: var(--color-badge-wuga-bg);     color: var(--color-badge-wuga-fg); }
+.badge--reddit   { background-color: var(--color-badge-reddit-bg);   color: var(--color-badge-reddit-fg); }
+
+/* --- Materials: the filter dropdown and the dialog ---------------------- */
+.filter-panel {
+  background: var(--color-material);
+  -webkit-backdrop-filter: var(--material-blur);
+  backdrop-filter: var(--material-blur);
+  border: 1px solid var(--color-material-border);
+}
+
+dialog::backdrop {
+  background: var(--color-scrim);
+}
+
+/* --- Status copy now speaks the theme ---------------------------------- */
+.form-error {
+  color: var(--color-danger);
+}
+
+.form-hint {
+  color: var(--color-text-secondary);
+}
+
+/* --- Evening edition: borders carry separation, shadows do not --------- */
+@media (prefers-color-scheme: dark) {
+  .card,
+  .listing-card,
+  .filter-panel {
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+  }
+
+  .card:hover,
+  .listing-card:hover {
+    border-color: var(--color-border-strong);
+  }
+}
+
+/* --- Preference fallbacks at component specificity --------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .card:hover,
+  .card-hover:hover,
+  .btn:active,
+  .chip:active,
+  .tab:active,
+  .filter-toggle:active,
+  .listing-card__delete:active,
+  #modal-close:active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .filter-panel {
+    background: var(--color-surface-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-border-strong);
+  }
+
+  dialog::backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .btn,
+  .chip,
+  .tab,
+  .form-input,
+  .form-select,
+  .form-textarea,
+  .badge {
+    border: 1px solid var(--color-border-strong);
+  }
+
+  dialog::backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* --- Skip link: visible only when it has focus ------------------------- */
+.skip-link {
+  position: absolute;
+  left: var(--gutter, 1rem);
+  top: -100vh;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  min-height: var(--target-min);
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ============================================================
+   D — MEASURED FIXES (components)
+   ------------------------------------------------------------
+   Scoped overrides for the handful of rules that failed a rendered
+   measurement. Nothing here removes a rule the site already relies on.
+   ============================================================ */
+
+/* Selected tab: the label carried the brand hue, which measured 3.26:1 on
+   ink. The underline keeps the brand hue — 3:1 is the bar for a non-text
+   indicator, and the label is what has to carry 4.5:1. */
+.tab.is-active {
+  color: var(--color-tab-active);
+}
+
+/* The filter panel was the one holdout on the motion contract: three
+   properties at 300ms and 200ms on the default ease curve. Same property
+   list, retuned to one exponential chrome duration. The max-height reveal
+   itself is pre-existing behaviour and stays as authored. */
+.filter-panel {
+  transition-duration: var(--duration-chrome), var(--duration-chrome), var(--duration-chrome);
+  transition-timing-function: var(--ease-out);
+}
+
+/* Header chrome sat under the 44px floor as rendered: the logo 42px tall,
+   each nav link 30–32px, the forecast link 21px. Footer text links inside
+   sentences stay as they are — an inline link in running text is not a
+   touch target. */
+.site-logo {
+  min-height: var(--target-min);
+}
+
+.site-nav .nav-link,
+.weather-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+}
+
+/* ================================================================== *
+ * E — Brand emphasis, retargeted to the text role (added 2026-09-30)
+ *
+ * Same declarations, same specificity, later in the cascade: only the
+ * colour source changes. Underlines, borders and filled controls keep
+ * --color-brand, which is where the brand hue is strong enough.
+ * ================================================================== */
+
+.card__title a:hover,
+.chip:hover,
+.filter-toggle:hover,
+.tab:hover,
+.listing-card__category,
+.weather-link,
+.btn--ghost {
+  color: var(--color-brand-text);
+}
+
+a:hover,
+.nav-link:hover,
+.nav-link.is-active,
+.section-action,
+.footer-sources a:hover {
+  color: var(--color-brand-text);
+}
+
+/* The masthead muted its tagline with opacity rather than with a colour,
+   which measured 4.33:1 by day and 3.31:1 at night — 13px copy has to be
+   a real colour, not a dimmed one. White on the masthead red is 6.85:1. */
+.site-tagline {
+  opacity: 1;
+}
+
+/* A brand-red focus ring on the brand-red masthead is no ring at all
+   (1.0:1). The inverse colour reads 6.85:1 by day, 4.88:1 at night. */
+.site-header :focus-visible,
+.skip-link:focus {
+  outline-color: var(--color-text-inverse);
+}
+
+/* ================================================================== *
+ * I — Warning and danger words (added 2026-09-30)
+ *
+ * Three states nobody had rendered. Measured on the page: the delete
+ * button's hover red #B91C1C at 2.61:1 on the evening card, the counter's
+ * amber #D97706 at 3.19:1 on day paper, its at-limit red #DC2626 at 3.50:1
+ * in the evening. All are ordinary 13-16px words and need 4.5:1.
+ * ================================================================== */
+
+.listing-card__delete:hover,
+.listing-card__delete:focus-visible {
+  color: var(--color-danger);
+}
+
+.form-char-count.is-near-limit {
+  color: var(--color-warning);
+}
+
+.form-char-count.is-at-limit {
+  color: var(--color-danger);
+}
+
+/* ------------------------------------------------------------------
+   Slice J — skip-link focus ring (measured, not assumed)
+   The skip link paints as a chip over the page surface, not inside the
+   masthead, so the inverse ring chosen for header controls is invisible
+   here: white on newsprint measured 1.08:1. It takes the standard ring
+   instead — brand in the morning edition, the link tint in the evening
+   edition. Equal specificity with the masthead rule, so it is written as
+   a type + class selector to win regardless of stylesheet load order.
+   ------------------------------------------------------------------ */
+a.skip-link:focus {
+  outline-color: var(--focus-ring);
+}
+
+/* ------------------------------------------------------------------
+   Slice K — form control touch targets (measured: 512x37)
+   The dialog inputs and the category select rendered 37px tall, below the
+   44px floor used everywhere else on this page. Height only; the existing
+   padding, type scale and grid are untouched.
+   ------------------------------------------------------------------ */
+.form-input,
+.form-select {
+  min-height: var(--target-min);
+}

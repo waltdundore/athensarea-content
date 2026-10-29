@@ -10,6 +10,9 @@ import { onFilterChangeCallback, getDateFilter } from './filter.js';
 
 /** @type {Array<{sourceId: string, title: string, link: string, excerpt: string, date: string, badge: string}>} */
 let allArticles = [];
+// Set once every source has settled, so "still loading" stays tellable apart
+// from "nothing came back".
+let feedSettled = false;
 
 export function initFeed(sources) {
   onFilterChangeCallback(renderFiltered);
@@ -24,6 +27,7 @@ export function initFeed(sources) {
  * @param {typeof SOURCES} sources
  */
 async function fetchAllSources(sources) {
+  failedSources = 0;
   const MAX = sources.length;
   const promises = [];
   for (let i = 0; i < MAX; i++) {
@@ -31,6 +35,7 @@ async function fetchAllSources(sources) {
   }
   // Fetch all concurrently; failures are isolated per source
   await Promise.allSettled(promises);
+  feedSettled = true;
   renderFiltered(new Set());
 }
 
@@ -49,8 +54,9 @@ async function fetchSource(source) {
     for (let i = 0; i < MAX; i++) {
       allArticles.push(articles[i]);
     }
-  } catch (_) {
-    // Source failed — silently skip; other sources still render
+  } catch (err) {
+    failedSources += 1;
+    console.warn('feed source failed', source.id, err && err.message);
   }
 }
 
@@ -188,14 +194,24 @@ function renderFiltered(activeIds) {
 
   const visible = allArticles.filter(a => isArticleVisible(a, activeIds));
 
-  if (visible.length === 0 && allArticles.length === 0) {
+  if (!feedSettled && allArticles.length === 0) {
     // Still loading — keep skeletons
     return;
   }
 
   if (visible.length === 0) {
     container.innerHTML =
-      '<div class="empty-state"><p class="empty-state__message">No articles match the selected filters.</p></div>';
+      failedSources > 0 && allArticles.length === 0
+        ? '<div class="empty-state"><p class="empty-state__message">The news feeds did not answer. This is usually temporary — nothing to fix on your end.</p><button type="button" class="btn btn--secondary" data-retry-feed>Try again</button></div>'
+        : '<div class="empty-state"><p class="empty-state__message">No articles match the selected filters — try another source or a wider date range.</p></div>';
+    const feedRetry = container.querySelector('[data-retry-feed]');
+    if (feedRetry) {
+      feedRetry.addEventListener('click', () => {
+        feedRetry.disabled = true;
+        feedRetry.textContent = 'Retrying…';
+        fetchAllSources(SOURCES);
+      });
+    }
     updateArticleCount(0);
     return;
   }
@@ -218,7 +234,7 @@ function renderFiltered(activeIds) {
 function updateArticleCount(count) {
   const el = document.getElementById('article-count');
   if (!el) { return; }
-  el.textContent = count > 0 ? `${count} stories` : '';
+  el.textContent = count > 0 ? `${count} ${count === 1 ? 'story' : 'stories'}` : '';
 }
 
 /**
@@ -312,3 +328,11 @@ function esc(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+
+/* ------------------------------------------------------------------ *
+ * A source that fails silently is indistinguishable from a source with
+ * nothing to show. Counting the failures lets the empty state tell the
+ * reader which of the two they are looking at, and offer a retry.
+ * ------------------------------------------------------------------ */
+let failedSources = 0;

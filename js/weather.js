@@ -27,7 +27,9 @@ async function fetchWeather() {
     const period      = await fetchCurrentPeriod(forecastUrl);
     renderWeather(display, period);
   } catch (err) {
-    renderError(display, 'Weather unavailable');
+    // One plain line with a way out; the status code belongs in the log.
+    console.warn('weather fetch failed', err);
+    renderError(display, 'The weather service is not answering right now.');
   }
 }
 
@@ -101,7 +103,10 @@ function renderWeather(display, period) {
  * @param {string} message
  */
 function renderError(display, message) {
-  display.innerHTML = `<p class="weather-error">${esc(message)}</p>`;
+  display.innerHTML = `<p class="weather-error">${esc(message)}</p>` +
+    '<button type="button" class="btn btn--secondary" data-retry-weather>Try again</button>';
+  const btn = display.querySelector('[data-retry-weather]');
+  if (btn) { btn.addEventListener('click', () => fetchWeather()); }
 }
 
 /**

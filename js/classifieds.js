@@ -88,9 +88,15 @@ async function loadAndRenderListings() {
 
     const listings = await res.json();
     renderListings(container, listings);
-  } catch (_) {
+  } catch (err) {
+    // Nothing here is the reader's fault, and "try again shortly" is a promise
+    // we cannot keep — hand them the retry instead.
+    console.warn('listings load failed', err);
     container.innerHTML =
-      '<div class="empty-state"><p class="empty-state__message">Could not load listings. Try again shortly.</p></div>';
+      '<div class="empty-state"><p class="empty-state__message">The listings did not load. Nothing you typed is lost.</p>' +
+      '<button type="button" class="btn btn--secondary" data-retry-listings>Try again</button></div>';
+    const retry = container.querySelector('[data-retry-listings]');
+    if (retry) { retry.addEventListener('click', () => loadAndRenderListings()); }
   }
 }
 
@@ -161,6 +167,10 @@ async function deleteListing(id) {
   const container = document.getElementById('classifieds-list');
   if (!container) { return; }
 
+  // Removal is permanent and this path has no undo, so the resting answer is
+  // "not yet".
+  if (!window.confirm('Remove this listing? This cannot be undone.')) { return; }
+
   try {
     const res = await fetch(`/api/listings/${encodeURIComponent(id)}`, { method: 'DELETE' });
     if (!res.ok) {
@@ -169,7 +179,8 @@ async function deleteListing(id) {
     }
     await loadAndRenderListings();
   } catch (err) {
-    showDeleteError(err.message || 'Could not remove listing. Please try again.');
+    console.warn('listing delete failed', err);
+    showDeleteError(humanError(err, 'We could not remove that listing. It is still posted — try again.'));
   }
 }
 
@@ -271,10 +282,12 @@ async function submitListing(form) {
   const description = form.description.value.trim();
   const contact     = form.contact.value.trim();
 
-  // Client-side guard — required fields
-  if (!category) { form.category.focus(); return; }
-  if (!title)    { form.title.focus();    return; }
-  if (!description) { form.description.focus(); return; }
+  // Required fields: name the field and say what to do about it. Moving focus
+  // in silence reads as a form that refuses to answer.
+  if (!category)    { showFormError('Choose a category so people can find your listing.', form.category); return; }
+  if (!title)       { showFormError('Add a short title — it is the first thing people read.', form.title); return; }
+  if (!description) { showFormError('Say what you are listing, then send it.', form.description); return; }
+  clearFormError();
 
   // --- Turnstile gate: block submit with a visible error until solved ---
   if (turnstileCfg && turnstileCfg.enabled && !turnstileToken) {
@@ -310,9 +323,12 @@ async function submitListing(form) {
     renderTabs();
     loadAndRenderListings();
   } catch (err) {
-    // Surface error to user without exposing internals
-    const msg = err.message || 'Could not submit listing. Please try again.';
-    alert(msg);
+    // The dialog and everything typed into it stay put. The status code goes
+    // to the console; the next step goes to the person.
+    console.warn('listing submit failed', err);
+    showFormError(humanError(err, navigator.onLine
+      ? 'We could not post your listing. Nothing was saved — check the details and try again.'
+      : 'You look offline. Everything you typed is still here — try again once you are back.'));
   } finally {
     if (submitBtn) { submitBtn.disabled = false; }
   }
@@ -454,3 +470,71 @@ function esc(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+
+/* ------------------------------------------------------------------ *
+ * In-dialog feedback. Replaces the blocking dialog and the silent focus()
+ * jumps on required fields: the dialog stays open, the typed text stays
+ * in place, the message names the field and the next step, and the raw
+ * error goes to the console where it is actually useful.
+ * ------------------------------------------------------------------ */
+
+/** @param {string} msg @param {HTMLElement} [field] */
+function showFormError(msg, field) {
+  const form = document.getElementById('listing-form');
+  if (!form) { return; }
+  let err = document.getElementById('form-error');
+  if (!err) {
+    err = document.createElement('p');
+    err.id        = 'form-error';
+    err.className = 'form-error';
+    err.setAttribute('role', 'alert');
+    form.appendChild(err);
+  }
+  err.textContent = msg;
+  err.hidden      = false;
+  clearInvalidFields();
+  if (field) {
+    field.setAttribute('aria-invalid', 'true');
+    field.setAttribute('aria-describedby', err.id);
+    field.focus();
+  }
+}
+
+function clearFormError() {
+  const err = document.getElementById('form-error');
+  if (err) { err.hidden = true; }
+  clearInvalidFields();
+}
+
+function clearInvalidFields() {
+  const form = document.getElementById('listing-form');
+  if (!form) { return; }
+  const marked = form.querySelectorAll('[aria-invalid="true"]');
+  for (let i = 0; i < marked.length; i++) {
+    marked[i].removeAttribute('aria-invalid');
+    marked[i].removeAttribute('aria-describedby');
+  }
+}
+
+/**
+ * The API sometimes answers with a sentence written for a person; a bare
+ * status code is not one, and it must never reach the screen.
+ * @param {unknown} err
+ * @param {string} fallback
+ * @returns {string}
+ */
+function humanError(err, fallback) {
+  const msg = String((err && err.message) || '');
+  if (!msg || /^(Server error|Listings fetch|config fetch)\b/.test(msg)) { return fallback; }
+  // Browser and transport strings ("Failed to fetch", "TypeError: ...",
+  // "HTTP 503") stay in the console; people get the plain sentence above.
+  if (/[A-Za-z]+Error|failed to fetch|networkerror|aborterror|\bhttp\b|\bstatus\b|[0-9]{3}/i.test(msg)) { return fallback; }
+  return msg;
+}
+
+
+/* A stale inline error must not greet someone who closed the dialog and came
+   back with better intentions. */
+const postModalEl = document.getElementById('post-modal');
+if (postModalEl) { postModalEl.addEventListener('close', clearFormError); }
